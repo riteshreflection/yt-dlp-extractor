@@ -1,0 +1,27 @@
+name: Extract YouTube Stream
+
+on:
+  repository_dispatch:
+    types: [run-yt-dlp]
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install yt-dlp
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip
+          pip3 install yt-dlp
+
+      - name: Extract stream URL
+        run: |
+          echo "Input URL: ${{ github.event.client_payload.url }}"
+          yt-dlp -f best -g "${{ github.event.client_payload.url }}" > output.txt
+
+      - name: Send result to Glitch
+        run: |
+          RAW_URL=$(cat output.txt)
+          curl -X POST https://your-glitch-project.glitch.me/receive \
+               -H "Content-Type: application/json" \
+               -d "{\"stream_url\": \"$RAW_URL\", \"source_url\": \"${{ github.event.client_payload.url }}\"}"
